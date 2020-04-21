@@ -24,6 +24,9 @@ window.onload = () => {
   const histories = document.querySelector(".history");
   const votes = document.querySelector(".votes");
   const stages = document.querySelector(".stages");
+  socket.on("stage", (round) => {
+    stages.innerHTML = round.map((r) => `<div>${r}</div>`).join("");
+  });
   let whatVote = "vote";
   let myNum = 0;
   let isKing = false;
@@ -72,18 +75,37 @@ window.onload = () => {
   socket.on("voteResult", (history) => {
     const list = document.createElement("li");
     list.innerHTML = history
-      .map((v) => `<div class="${v ? "agree" : "disagree"}"></div>`)
+      .map(
+        (v, i) =>
+          `<div class="${v ? "agree" : "disagree"} player${i + 1}"></div>`
+      )
       .join("");
     histories.appendChild(list);
   });
 
   socket.on("expeditionResult", (stage, result) => {
     stages.children[stage].classList.add(result ? "success" : "fail");
+
+    selection.lastElementChild.style.display = "block";
+    [...votes.children].forEach((elem, index) => {
+      if (index == 0) {
+        elem.classList.add("flag");
+      } else {
+        elem.classList.remove("flag");
+      }
+    });
   });
 
   socket.on("startExpediton", (member) => {
     if (member[myNum - 1]) {
       selection.style.display = "flex";
+      switch (myClass) {
+        case "멀린":
+        case "퍼시벌":
+        case "시민":
+          selection.lastElementChild.style.display = "none";
+          break;
+      }
       whatVote = "expedition";
     }
   });
@@ -139,6 +161,8 @@ window.onload = () => {
             elem.classList.add("red");
           }
         });
+        break;
+      default:
         break;
     }
   });

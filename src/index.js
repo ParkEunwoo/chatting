@@ -42,9 +42,10 @@ app.get("/game/:id/:name", (req, res) => {
   res.sendFile(__dirname + "/main.html");
 });
 
-io.on("connection", (socket) => {
+io.on("connection", (defaultSocket) => {
+  console.log("user connected");
   io.emit("gameList", games);
-  socket.on("newGame", (game) => {
+  defaultSocket.on("newGame", (game) => {
     if (game.total < 5 || game.total > 6) {
       return;
     }
@@ -58,8 +59,9 @@ io.on("connection", (socket) => {
     const index = games.length - 1;
     io.emit("gameList", games);
     const { stage, classes } = rules[game.total];
+    const playerNum = Number(game.total);
     gameInfos.push({
-      playerNum: game.total,
+      playerNum,
       players: [],
       getNumber: {},
       isReady: {},
@@ -68,14 +70,15 @@ io.on("connection", (socket) => {
       expeditionResult: [],
       nowStage: 0,
       expeditionNum: 0,
-      expedition: Array(game.total).fill(false),
-      history: Array(game.total),
-      votes: Array(game.total).fill(false),
+      expedition: Array(playerNum).fill(false),
+      history: Array(playerNum),
+      votes: Array(playerNum).fill(false),
       king: 0,
       voteCnt: 0,
     });
 
     space.on("connection", (socket) => {
+      socket.emit("stage", gameInfos[index].stage);
       socket.on("join", (name) => {
         if (gameInfos[index].players.includes(name)) {
           socket.emit("block", "동일한 이름은 사용할 수 없습니다.");
@@ -105,7 +108,7 @@ io.on("connection", (socket) => {
         gameInfos[index].expeditionResult.push(value == "true");
         if (
           gameInfos[index].expeditionResult.length ==
-          gameInfos[index].stage[nowStage]
+          gameInfos[index].stage[gameInfos[index].nowStage]
         ) {
           const result = gameInfos[index].expeditionResult.every((v) => v);
           space.emit("expeditionResult", gameInfos[index].nowStage, result);
@@ -120,7 +123,10 @@ io.on("connection", (socket) => {
         }
       });
       socket.on("member", (number) => {
-        if (gameInfos[index].expeditionNum < gameInfos[index].stage[nowStage]) {
+        if (
+          gameInfos[index].expeditionNum <
+          gameInfos[index].stage[gameInfos[index].nowStage]
+        ) {
           if (gameInfos[index].expedition[number - 1]) return;
           gameInfos[index].expeditionNum++;
           gameInfos[index].expedition[number - 1] = true;
@@ -137,11 +143,13 @@ io.on("connection", (socket) => {
       socket.on("vote", (num, value) => {
         gameInfos[index].history[num - 1] = value == "true";
         gameInfos[index].votes[num - 1] = true;
-        if (votes.every((v) => v)) {
+        if (gameInfos[index].votes.every((v) => v)) {
           gameInfos[index].king =
             (gameInfos[index].king + 1) % gameInfos[index].playerNum;
           gameInfos[index].expeditionNum = 0;
-          gameInfos[index].votes = Array(6).fill(false);
+          gameInfos[index].votes = Array(gameInfos[index].playerNum).fill(
+            false
+          );
           space.emit("voteResult", gameInfos[index].history);
           const isGo = gameInfos[index].history.reduce(
             (a, c) => (c ? a + 1 : a),
@@ -166,10 +174,11 @@ io.on("connection", (socket) => {
         space.emit("chat message", name, gameInfos[index].getNumber[name], msg);
         if (msg === "ready") {
           gameInfos[index].isReady[name] = true;
-          if (Object.values(isReady).every((v) => v)) {
-            const shuffled = classes.sort(() => 0.5 - Math.random());
+          if (Object.values(gameInfos[index].isReady).every((v) => v)) {
+            const shuffled = gameInfos[index].classes.sort(
+              () => 0.5 - Math.random()
+            );
             space.emit("class", shuffled);
-            console.log(shuffled);
             console.log("start");
             space.emit("chat message", "관리자", 0, "게임이 시작되었습니다.");
             space.emit("king", gameInfos[index].king);
@@ -178,7 +187,7 @@ io.on("connection", (socket) => {
       });
     });
   });
-  socket.on("disconnect", () => {
+  defaultSocket.on("disconnect", () => {
     console.log("user disconnected");
   });
 });

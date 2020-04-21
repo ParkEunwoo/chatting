@@ -56,27 +56,35 @@ header .info .name {
 }
 .player1 {
   color: red;
+  border-color: red;
 }
 .player2 {
   color: blue;
+  border-color: blue;
 }
 .player3 {
   color: yellow;
+  border-color: yellow;
 }
 .player4 {
   color: purple;
+  border-color: purple;
 }
 .player5 {
   color: green;
+  border-color: green;
 }
 .player6 {
   color: orange;
+  border-color: orange;
 }
 .player7 {
   color: darkcyan;
+  border-color: darkcyan;
 }
 .player8 {
   color: brown;
+  border-color: brown;
 }
 
 .red {
@@ -199,7 +207,8 @@ article .history li {
 article .history li div {
   width: 2rem;
   height: 2rem;
-  border: 1px solid black;
+  border-width: 2px;
+  border-style: solid;
   border-radius: 50%;
   padding-top: 2rem;
   line-height: 1.5rem;
