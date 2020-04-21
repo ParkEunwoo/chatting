@@ -33,7 +33,7 @@ window.onload = () => {
   let myClass = "";
 
   socket.on("join", function (players) {
-    if (myNum === 0) myNum = players.length;
+    myNum = players.indexOf(name) + 1;
     participants.innerHTML = players
       .map((name, index) => `<li class="player${index + 1}">${name}</li>`)
       .join("");

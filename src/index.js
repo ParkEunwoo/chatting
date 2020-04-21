@@ -103,6 +103,7 @@ io.on("connection", (defaultSocket) => {
         delete gameInfos[index].getNumber[name];
         delete gameInfos[index].isReady[name];
         console.log(name + " leaved server");
+        space.emit("join", gameInfos[index].players);
         space.emit("chat message", name, 0, "님이 퇴장하였습니다.");
       });
 
