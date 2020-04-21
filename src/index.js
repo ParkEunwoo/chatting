@@ -3,7 +3,7 @@ const app = express();
 const http = require("http").createServer(app);
 const io = require("socket.io")(http);
 
-const playerNum = 6;
+const playerNum = 5;
 
 const players = [];
 const getNumber = {};
@@ -12,7 +12,7 @@ const stage = [2, 3, 2, 3, 3];
 let expeditionResult = [];
 let nowStage = 0;
 let expeditionNum = 0;
-const classes = ["멀린", "암살자", "모르가나", "퍼시벌", "시민", "시민"];
+const classes = ["멀린", "암살자", "모르가나", "퍼시벌", "시민"];
 
 let expedition = Array(playerNum).fill(false);
 let history = Array(playerNum);
@@ -66,7 +66,7 @@ io.on("connection", (socket) => {
     history[num - 1] = value == "true";
     votes[num - 1] = true;
     if (votes.every((v) => v)) {
-      king = (king + 1) % 6;
+      king = (king + 1) % playerNum;
       expeditionNum = 0;
       votes = Array(6).fill(false);
       io.emit("voteResult", history);
