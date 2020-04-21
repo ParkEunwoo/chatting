@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-script-type" content="text/javascript" />
+    <title>chat</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header>
+      <ul class="participants"></ul>
+      <div class="info">
+        <div class="class"></div>
+        <div class="name"></div>
+      </div>
+    </header>
+    <main>
+      <section>
+        <div class="stages">
+          <div>2</div>
+          <div>3</div>
+          <div>2</div>
+          <div>3</div>
+          <div>3</div>
+        </div>
+        <div class="votes">
+          <div class="flag"></div>
+          <div></div>
+          <div></div>
+          <div></div>
+          <div></div>
+        </div>
+      </section>
+      <ul class="messages"></ul>
+      <form id="chat" action="">
+        <input id="m" autocomplete="off" autofocus /><button>Send</button>
+      </form>
+    </main>
+    <article>
+      <h2>투표 기록</h2>
+      <ul class="history"></ul>
+      <div class="selection" style="display: none;">
+        <button class="true">수락</button>
+        <button class="false">거절</button>
+      </div>
+    </article>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/app.js"></script>
+  </body>
+</html>

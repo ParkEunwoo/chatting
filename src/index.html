@@ -2,47 +2,72 @@
 <html>
   <head>
     <title>chat</title>
-    <link rel="stylesheet" href="style.css" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+      }
+      ul {
+        flex: 1;
+        width: 500px;
+      }
+      ul li {
+        display: flex;
+        justify-content: space-around;
+      }
+    </style>
   </head>
   <body>
-    <header>
-      <ul class="participants"></ul>
-      <div class="info">
-        <div class="class"></div>
-        <div class="name"></div>
-      </div>
-    </header>
-    <main>
-      <section>
-        <div class="stages">
-          <div>2</div>
-          <div>3</div>
-          <div>2</div>
-          <div>3</div>
-          <div>3</div>
-        </div>
-        <div class="votes">
-          <div class="flag"></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-        </div>
-      </section>
-      <ul class="messages"></ul>
-      <form id="chat" action="">
-        <input id="m" autocomplete="off" autofocus /><button>Send</button>
-      </form>
-    </main>
-    <article>
-      <h2>투표 기록</h2>
-      <ul class="history"></ul>
-      <div class="selection" style="display: none;">
-        <button class="true">수락</button>
-        <button class="false">거절</button>
-      </div>
-    </article>
+    <label for="name">이름</label>
+    <input type="text" id="name" name="name" />
+    <ul class="gameList"></ul>
+    <form id="newGame">
+      <label for="title">방 제목</label>
+      <input type="text" name="title" id="title" />
+      <label for="number">인원</label>
+      <input type="number" name="number" id="number" />
+      <input type="submit" value="생성" />
+    </form>
     <script src="/socket.io/socket.io.js"></script>
-    <script src="./app.js"></script>
+    <script>
+      const socket = io();
+      const gameList = document.querySelector(".gameList");
+      const newGame = document.querySelector("#newGame");
+
+      gameList.addEventListener("click", (event) => {
+        const name = document.querySelector("#name").value;
+        if (name.length == 0) {
+          alert("이름 설정 ㄱㄱ");
+          return;
+        }
+        let node = event.target;
+        if (node.tagName == "UL") return;
+
+        while (node.tagName != "LI") {
+          node = node.parentNode;
+        }
+        location.href = `/game/${node.classList[0]}/${name}`;
+      });
+      socket.on("gameList", (games) => {
+        const list = games.map(({ id, title, num, total }) => {
+          const li = document.createElement("li");
+          li.classList.add(id);
+          li.innerHTML = `<div>${title}</div><div>${num}/${total}</div>`;
+          return li;
+        });
+        gameList.innerHTML = "";
+        list.forEach((li) => gameList.appendChild(li));
+      });
+
+      newGame.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const title = document.querySelector("#title").value;
+        const total = document.querySelector("#number").value;
+        socket.emit("newGame", { title, total });
+      });
+    </script>
   </body>
 </html>
