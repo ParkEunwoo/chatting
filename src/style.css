@@ -1,0 +1,231 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+body {
+  font: 16px Helvetica, Arial;
+  display: flex;
+  height: 100vh;
+}
+
+header {
+  flex: 1;
+  border: 1px solid red;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+header .participants li {
+  font-size: 1.2em;
+  padding: 0.4em;
+}
+
+header .info .class {
+  font-size: 2em;
+  text-align: center;
+}
+
+header .info .name {
+  font-size: 2em;
+  text-align: center;
+  margin: 0.5em;
+}
+
+.king::after {
+  float: right;
+  color: black;
+  content: "왕";
+  text-align: center;
+  width: 1.2em;
+  height: 1.2em;
+  border: 2px solid gold;
+}
+
+.expedition::after {
+  float: right;
+  color: black;
+  content: "원정";
+  text-align: center;
+  width: 2.4em;
+  height: 1.2em;
+  border: 2px solid royalblue;
+}
+.player1 {
+  color: red;
+}
+.player2 {
+  color: blue;
+}
+.player3 {
+  color: yellow;
+}
+.player4 {
+  color: purple;
+}
+.player5 {
+  color: green;
+}
+.player6 {
+  color: orange;
+}
+.player7 {
+  color: darkcyan;
+}
+.player8 {
+  color: brown;
+}
+
+.red {
+  border: 2px solid red;
+}
+.blue {
+  border: 2px solid blue;
+}
+
+main {
+  border: 1px solid blue;
+  flex: 5;
+  display: flex;
+  flex-direction: column;
+}
+
+main section {
+  border: 1px solid peru;
+}
+
+.stages {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 2rem;
+}
+
+.stages div {
+  width: 5rem;
+  height: 5rem;
+  border: 1px solid black;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2em;
+}
+
+.votes {
+  margin: 2rem 0;
+  display: flex;
+  justify-content: space-around;
+}
+
+.votes div {
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid black;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2em;
+}
+
+.flag {
+  background: coral;
+}
+
+.success {
+  background: blue;
+}
+
+.fail {
+  background: red;
+}
+article {
+  border: 1px solid green;
+}
+main ul {
+  flex: 1;
+  overflow-y: scroll;
+}
+form {
+  border: 1px solid black;
+  padding: 3px;
+  bottom: 0;
+}
+form input {
+  border: 0;
+  padding: 10px;
+  width: 90%;
+  margin-right: 0.5%;
+}
+form button {
+  width: 9%;
+  background: rgb(130, 224, 255);
+  border: none;
+  padding: 10px;
+}
+.messages {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+.messages li {
+  padding: 5px 10px;
+}
+.messages li:nth-child(odd) {
+  background: #eee;
+}
+
+article {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+article .history {
+  flex: 1;
+  overflow-y: scroll;
+}
+
+article .history li {
+  display: flex;
+  border: 1px solid purple;
+  justify-content: space-between;
+}
+article .history li div {
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid black;
+  border-radius: 50%;
+  padding-top: 2rem;
+  line-height: 1.5rem;
+  font-size: 0.3em;
+}
+
+.agree {
+  background: white;
+}
+
+.disagree {
+  background: black;
+}
+
+article .selection {
+  flex: 2;
+}
+.selection {
+  display: flex;
+  flex-direction: column;
+}
+.selection button {
+  font-size: 2em;
+  flex: 1;
+  color: white;
+}
+
+.selection button:first-child {
+  background: mediumspringgreen;
+}
+.selection button:last-child {
+  background: orangered;
+}
