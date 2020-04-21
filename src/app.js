@@ -1,5 +1,5 @@
 const id = location.href.split("/")[4];
-const name = location.href.split("/")[5];
+const name = decodeURI(location.href.split("/")[5]);
 let isBlock = false;
 document.querySelector(".name").textContent = name;
 
