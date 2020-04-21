@@ -2,6 +2,7 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  background: black;
 }
 body {
   font: 16px Helvetica, Arial;
@@ -11,7 +12,6 @@ body {
 
 header {
   flex: 1;
-  border: 1px solid red;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -25,17 +25,19 @@ header .participants li {
 header .info .class {
   font-size: 2em;
   text-align: center;
+  color: white;
 }
 
 header .info .name {
   font-size: 2em;
   text-align: center;
   margin: 0.5em;
+  color: white;
 }
 
 .king::after {
   float: right;
-  color: black;
+  color: gold;
   content: "왕";
   text-align: center;
   width: 1.2em;
@@ -45,7 +47,7 @@ header .info .name {
 
 .expedition::after {
   float: right;
-  color: black;
+  color: royalblue;
   content: "원정";
   text-align: center;
   width: 2.4em;
@@ -85,14 +87,9 @@ header .info .name {
 }
 
 main {
-  border: 1px solid blue;
   flex: 5;
   display: flex;
   flex-direction: column;
-}
-
-main section {
-  border: 1px solid peru;
 }
 
 .stages {
@@ -104,7 +101,8 @@ main section {
 .stages div {
   width: 5rem;
   height: 5rem;
-  border: 1px solid black;
+  border: 1px solid white;
+  color: white;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -121,7 +119,7 @@ main section {
 .votes div {
   width: 2rem;
   height: 2rem;
-  border: 1px solid black;
+  border: 1px solid white;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -140,21 +138,19 @@ main section {
 .fail {
   background: red;
 }
-article {
-  border: 1px solid green;
-}
 main ul {
   flex: 1;
   overflow-y: scroll;
 }
 form {
-  border: 1px solid black;
+  background: white;
   padding: 3px;
   bottom: 0;
 }
 form input {
   border: 0;
   padding: 10px;
+  color: white;
   width: 90%;
   margin-right: 0.5%;
 }
@@ -168,11 +164,17 @@ form button {
   list-style-type: none;
   margin: 0;
   padding: 0;
+  border: 1px solid red;
 }
 .messages li {
   padding: 5px 10px;
+  color: white;
 }
 .messages li:nth-child(odd) {
+  background: #eee;
+  color: black;
+}
+.messages li:nth-child(odd) span {
   background: #eee;
 }
 
@@ -180,16 +182,18 @@ article {
   display: flex;
   flex: 1;
   flex-direction: column;
+  background: gray;
+  color: white;
 }
 
 article .history {
   flex: 1;
   overflow-y: scroll;
+  background: gray;
 }
 
 article .history li {
   display: flex;
-  border: 1px solid purple;
   justify-content: space-between;
 }
 article .history li div {
