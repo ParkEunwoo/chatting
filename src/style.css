@@ -173,19 +173,16 @@ form button {
   margin: 0;
   padding: 0;
   border: 1px solid red;
+  background: gray;
 }
 .messages li {
+  background: gray;
   padding: 5px 10px;
-  color: white;
-}
-.messages li:nth-child(odd) {
-  background: #eee;
   color: black;
 }
-.messages li:nth-child(odd) span {
-  background: #eee;
+.messages li span {
+  background: gray;
 }
-
 article {
   display: flex;
   flex: 1;
