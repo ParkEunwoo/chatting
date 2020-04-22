@@ -49,13 +49,11 @@ io.on("connection", (defaultSocket) => {
     if (game.total < 5 || game.total > 6) {
       return;
     }
-    const id = Date.now();
     games.push({
-      id,
       ...game,
       num: 0,
     });
-    const space = io.of("/" + id);
+    const space = io.of("/" + game.id);
     const index = games.length - 1;
     io.emit("gameList", games);
     const { stage, classes } = rules[game.total];
@@ -66,6 +64,7 @@ io.on("connection", (defaultSocket) => {
       getNumber: {},
       isReady: {},
       stage,
+      stageResult: { success: 0, fail: 0 },
       classes,
       expeditionResult: [],
       nowStage: 0,
@@ -75,6 +74,8 @@ io.on("connection", (defaultSocket) => {
       votes: Array(playerNum).fill(false),
       king: 0,
       voteCnt: 0,
+      merlin: -1,
+      assassin: -1,
     });
 
     space.on("connection", (socket) => {
@@ -105,6 +106,16 @@ io.on("connection", (defaultSocket) => {
         console.log(name + " leaved server");
         space.emit("join", gameInfos[index].players);
         space.emit("chat message", name, 0, "님이 퇴장하였습니다.");
+        if (games[index].num == 0) {
+          Object.keys(space.connected).forEach((socketId) => {
+            space.connected[socketId].disconnect();
+          });
+          space.removeAllListeners();
+          delete io.nsps["/" + game.id];
+          delete gameInfos[index];
+          delete games[index];
+          io.emit("gameList", games);
+        }
       });
 
       socket.on("expedition", (num, value) => {
@@ -114,16 +125,50 @@ io.on("connection", (defaultSocket) => {
           gameInfos[index].stage[gameInfos[index].nowStage]
         ) {
           const result = gameInfos[index].expeditionResult.every((v) => v);
+          gameInfos[index].stageResult[result ? "success" : "fail"]++;
           space.emit("expeditionResult", gameInfos[index].nowStage, result);
-          gameInfos[index].expeditionResult = [];
+          if (gameInfos[index].stageResult.fail == 3) {
+            space.emit("chat message", "관리자", 0, "악의 승리입니다.");
+            space.emit("exit", -1);
+            Object.keys(space.connected).forEach((socketId) => {
+              space.connected[socketId].disconnect();
+            });
+            space.removeAllListeners();
+            delete io.nsps["/" + game.id];
+            delete gameInfos[index];
+            delete games[index];
+            io.emit("gameList", games);
+          }
+          if (gameInfos[index].stageResult.success == 3) {
+            space.emit("exit", gameInfos[index].assassin);
+            return;
+          }
+          if (gameInfos[index]) gameInfos[index].expeditionResult = [];
           gameInfos[index].nowStage++;
           gameInfos[index].expedition = Array(gameInfos[index].playerNum).fill(
             false
           );
           gameInfos[index].voteCnt = 0;
           space.emit("expedition", gameInfos[index].expedition);
-          space.emit("king", gameInfos[index].king);
+          space.emit("king", gameInfos[index].king, 0);
         }
+      });
+      socket.on("merlin", (number) => {
+        space.emit("merlinResult", number, gameInfos[index].merlin);
+        if (number == gameInfos[index].merlin) {
+          space.emit("chat message", "관리자", 0, "악의 승리입니다.");
+        } else {
+          space.emit("chat message", "관리자", 0, "선의 승리입니다.");
+        }
+
+        Object.keys(space.connected).forEach((socketId) => {
+          space.connected[socketId].disconnect();
+        });
+        space.removeAllListeners();
+        delete io.nsps["/" + game.id];
+        delete gameInfos[index];
+        delete games[index];
+        io.emit("gameList", games);
       });
       socket.on("member", (number) => {
         if (
@@ -139,7 +184,7 @@ io.on("connection", (defaultSocket) => {
             gameInfos[index].stage[gameInfos[index].nowStage]
           ) {
             gameInfos[index].history = Array(gameInfos[index].playerNum);
-            space.emit("vote", gameInfos[index].voteCnt);
+            space.emit("vote");
           }
         }
       });
@@ -159,32 +204,47 @@ io.on("connection", (defaultSocket) => {
             0
           );
           if (isGo > 2) {
-            space.emit("startExpediton", gameInfos[index].expedition);
+            space.emit(
+              "startExpediton",
+              gameInfos[index].nowStage,
+              gameInfos[index].expedition
+            );
           } else {
             gameInfos[index].history = Array(gameInfos[index].playerNum);
             gameInfos[index].expedition = Array(
               gameInfos[index].playerNum
             ).fill(false);
-            space.emit("vote", ++gameInfos[index].voteCnt);
             space.emit("expedition", gameInfos[index].expedition);
-            space.emit("king", gameInfos[index].king);
+            space.emit(
+              "king",
+              gameInfos[index].king,
+              ++gameInfos[index].voteCnt
+            );
           }
         }
       });
 
-      socket.on("chat message", (name, msg) => {
+      socket.on("chat message", (name, num, msg) => {
         console.log(`${name} : ${msg}`);
-        space.emit("chat message", name, gameInfos[index].getNumber[name], msg);
+        space.emit("chat message", name, num, msg);
         if (msg === "ready") {
           gameInfos[index].isReady[name] = true;
           if (Object.values(gameInfos[index].isReady).every((v) => v)) {
             const shuffled = gameInfos[index].classes.sort(
               () => 0.5 - Math.random()
             );
+            shuffled.forEach((c, i) => {
+              if (c == "멀린") {
+                gameInfos[index].merlin = i + 1;
+              }
+              if (c == "암살자") {
+                gameInfos[index].assassin = i + 1;
+              }
+            });
             space.emit("class", shuffled);
             console.log("start");
             space.emit("chat message", "관리자", 0, "게임이 시작되었습니다.");
-            space.emit("king", gameInfos[index].king);
+            space.emit("king", gameInfos[index].king, 0);
           }
         }
       });

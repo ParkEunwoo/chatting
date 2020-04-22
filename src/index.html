@@ -64,9 +64,19 @@
 
       newGame.addEventListener("submit", (event) => {
         event.preventDefault();
+        const name = document.querySelector("#name").value;
+        if (name.length == 0) {
+          alert("이름 설정 ㄱㄱ");
+          return;
+        }
+        const id = Date.now();
+        console.log(id);
         const title = document.querySelector("#title").value;
         const total = document.querySelector("#number").value;
-        socket.emit("newGame", { title, total });
+
+        socket.emit("newGame", { id, title, total });
+        console.log("href");
+        location.href = `/game/${id}/${name}`;
       });
     </script>
   </body>

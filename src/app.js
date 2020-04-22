@@ -24,8 +24,11 @@ window.onload = () => {
   const histories = document.querySelector(".history");
   const votes = document.querySelector(".votes");
   const stages = document.querySelector(".stages");
+  const expeditions = document.querySelector(".expeditions");
   socket.on("stage", (round) => {
-    stages.innerHTML = round.map((r) => `<div>${r}</div>`).join("");
+    [...stages.children].forEach((elem, i) => {
+      elem.textContent = round[i];
+    });
   });
   let whatVote = "vote";
   let myNum = 0;
@@ -39,17 +42,26 @@ window.onload = () => {
       .join("");
   });
 
-  participants.addEventListener("click", (event) => {
+  const selectMember = (event) => {
     if (isKing) {
       socket.emit("member", event.target.classList[0].substr(-1));
     }
-  });
+  };
 
-  selection.addEventListener("click", (event) => {
+  const voteHandler = (event) => {
     socket.emit(whatVote, myNum, event.target.classList[0]);
     whatVote = "vote";
     selection.style.display = "none";
-  });
+  };
+
+  const findMerlin = (event) => {
+    socket.emit("merlin", event.target.classList[0].substr(-1));
+    participants.removeEventListener("click", findMerlin);
+  };
+
+  participants.addEventListener("click", selectMember);
+
+  selection.addEventListener("click", voteHandler);
 
   socket.on("expedition", (list) => {
     [...participants.children].forEach((elem, index) => {
@@ -61,17 +73,9 @@ window.onload = () => {
     });
   });
 
-  socket.on("vote", (voteNum) => {
+  socket.on("vote", () => {
     selection.style.display = "flex";
-    [...votes.children].forEach((elem, index) => {
-      if (index == voteNum) {
-        elem.classList.add("flag");
-      } else {
-        elem.classList.remove("flag");
-      }
-    });
   });
-
   socket.on("voteResult", (history) => {
     const list = document.createElement("li");
     list.innerHTML = history
@@ -81,6 +85,8 @@ window.onload = () => {
       )
       .join("");
     histories.appendChild(list);
+
+    selection.style.display = "none";
   });
 
   socket.on("expeditionResult", (stage, result) => {
@@ -96,7 +102,14 @@ window.onload = () => {
     });
   });
 
-  socket.on("startExpediton", (member) => {
+  socket.on("startExpediton", (round, member) => {
+    member.forEach((m, i) => {
+      if (m) {
+        expeditions.children[round].innerHTML += `<div class="exp p${
+          i + 1
+        }"></div>`;
+      }
+    });
     if (member[myNum - 1]) {
       selection.style.display = "flex";
       switch (myClass) {
@@ -110,7 +123,7 @@ window.onload = () => {
     }
   });
 
-  socket.on("king", (king) => {
+  socket.on("king", (king, voteNum) => {
     if (myNum - 1 === king) isKing = true;
     else isKing = false;
     [...participants.children].forEach((elem, index) => {
@@ -120,12 +133,20 @@ window.onload = () => {
         elem.classList.remove("king");
       }
     });
+
+    [...votes.children].forEach((elem, index) => {
+      if (index == voteNum) {
+        elem.classList.add("flag");
+      } else {
+        elem.classList.remove("flag");
+      }
+    });
   });
 
   form.addEventListener("submit", (e) => {
     e.preventDefault();
     if (send.value === "") return;
-    socket.emit("chat message", name, send.value);
+    socket.emit("chat message", name, myNum, send.value);
     send.value = "";
   });
 
@@ -167,8 +188,29 @@ window.onload = () => {
     }
   });
 
+  socket.on("merlinResult", (select, merlin) => {
+    participants.children[select - 1].classList.add("selected");
+    participants.children[merlin - 1].classList.add("merlin");
+  });
+
+  socket.on("exit", (assassin) => {
+    if (myNum != assassin) {
+      participants.removeEventListener("click", selectMember);
+      selection.removeEventListener("click", voteHandler);
+    }
+    if (assassin != -1) {
+      participants.children[assassin - 1].classList.add("assassin");
+      if (myNum == assassin) {
+        participants.addEventListener("click", findMerlin);
+      }
+    }
+  });
+
   socket.on("chat message", function (name, number, msg) {
     const message = document.createElement("li");
+    if (number == 0) {
+      message.classList.add("player0");
+    }
     message.innerHTML = `<span class="player${number}">${name}</span><span> : ${msg}</span>`;
     messages.appendChild(message);
     messages.scrollTop = messages.scrollHeight;

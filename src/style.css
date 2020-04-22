@@ -54,6 +54,34 @@ header .info .name {
   height: 1.2em;
   border: 2px solid royalblue;
 }
+
+.assassin::after {
+  float: right;
+  color: darkred;
+  content: "암살자";
+  text-align: center;
+  width: 3.6em;
+  height: 1.2em;
+  border: 2px solid darkred;
+}
+
+.merlin::after {
+  float: right;
+  color: aquamarine;
+  content: "멀린";
+  text-align: center;
+  width: 2.4em;
+  height: 1.2em;
+  border: 2px solid aquamarine;
+}
+
+.selected {
+  background: rgba(80, 186, 228, 0.5);
+}
+
+.player0 span {
+  color: lawngreen;
+}
 .player1 {
   color: red;
   border-color: red;
@@ -86,6 +114,46 @@ header .info .name {
   color: brown;
   border-color: brown;
 }
+.p1 {
+  color: red;
+  background-color: red;
+  border-color: red;
+}
+.p2 {
+  color: blue;
+  background-color: blue;
+  border-color: blue;
+}
+.p3 {
+  color: yellow;
+  background-color: yellow;
+  border-color: yellow;
+}
+.p4 {
+  color: purple;
+  background-color: purple;
+  border-color: purple;
+}
+.p5 {
+  color: green;
+  background-color: green;
+  border-color: green;
+}
+.p6 {
+  color: orange;
+  background-color: orange;
+  border-color: orange;
+}
+.p7 {
+  color: darkcyan;
+  background-color: darkcyan;
+  border-color: darkcyan;
+}
+.p8 {
+  color: brown;
+  background-color: brown;
+  border-color: brown;
+}
 
 .red {
   border: 2px solid red;
@@ -116,6 +184,28 @@ main {
   align-items: center;
   justify-content: center;
   font-size: 2em;
+}
+
+.expeditions {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 0.2rem;
+}
+
+.expeditions > div {
+  width: 5rem;
+  height: 0.5rem;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.exp {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-width: 2px;
+  border-style: solid;
+  border-radius: 50%;
+  margin: 0 0.2rem;
 }
 
 .votes {
