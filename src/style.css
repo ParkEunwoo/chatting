@@ -155,11 +155,29 @@ header .info .name {
   border-color: brown;
 }
 
+.prepare {
+  color: white;
+  font-size: 2rem;
+  padding: 0.2em 0.6em;
+}
+
+.ready {
+  background: gray;
+}
+
 .red {
   border: 2px solid red;
 }
 .blue {
   border: 2px solid blue;
+}
+
+.good {
+  color: blue;
+}
+
+.bad {
+  color: red;
 }
 
 main {

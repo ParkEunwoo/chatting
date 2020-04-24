@@ -85,12 +85,19 @@ io.on("connection", (defaultSocket) => {
           socket.emit("block", "동일한 이름은 사용할 수 없습니다.");
           return;
         }
-        games[index].num++;
-        io.emit("gameList", games);
+
+        if (games[index].num == games[index].total) {
+          socket.emit("block", "정원이 가득찼습니다.");
+          return;
+        }
 
         gameInfos[index].players.push(name);
         gameInfos[index].getNumber[name] = gameInfos[index].players.length;
         gameInfos[index].isReady[name] = false;
+
+        games[index].num = gameInfos[index].players.length;
+        io.emit("gameList", games);
+
         console.log(name + " joined server");
         space.emit("chat message", name, 0, "님이 입장하였습니다.");
         space.emit("join", gameInfos[index].players);
@@ -224,29 +231,33 @@ io.on("connection", (defaultSocket) => {
         }
       });
 
+      socket.on("ready", (name) => {
+        gameInfos[index].isReady[name] = true;
+        if (
+          games[index].num == games[index].total &&
+          Object.values(gameInfos[index].isReady).every((v) => v)
+        ) {
+          const shuffled = gameInfos[index].classes.sort(
+            () => 0.5 - Math.random()
+          );
+          shuffled.forEach((c, i) => {
+            if (c == "멀린") {
+              gameInfos[index].merlin = i + 1;
+            }
+            if (c == "암살자") {
+              gameInfos[index].assassin = i + 1;
+            }
+          });
+          space.emit("class", shuffled);
+          console.log("start");
+          space.emit("chat message", "관리자", 0, "게임이 시작되었습니다.");
+          space.emit("king", gameInfos[index].king, 0);
+        }
+      });
+
       socket.on("chat message", (name, num, msg) => {
         console.log(`${name} : ${msg}`);
         space.emit("chat message", name, num, msg);
-        if (msg === "ready") {
-          gameInfos[index].isReady[name] = true;
-          if (Object.values(gameInfos[index].isReady).every((v) => v)) {
-            const shuffled = gameInfos[index].classes.sort(
-              () => 0.5 - Math.random()
-            );
-            shuffled.forEach((c, i) => {
-              if (c == "멀린") {
-                gameInfos[index].merlin = i + 1;
-              }
-              if (c == "암살자") {
-                gameInfos[index].assassin = i + 1;
-              }
-            });
-            space.emit("class", shuffled);
-            console.log("start");
-            space.emit("chat message", "관리자", 0, "게임이 시작되었습니다.");
-            space.emit("king", gameInfos[index].king, 0);
-          }
-        }
       });
     });
   });

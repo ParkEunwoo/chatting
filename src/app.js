@@ -25,6 +25,18 @@ window.onload = () => {
   const votes = document.querySelector(".votes");
   const stages = document.querySelector(".stages");
   const expeditions = document.querySelector(".expeditions");
+  const prepare = document.querySelector(".prepare");
+
+  const readyHandler = (event) => {
+    event.preventDefault();
+    socket.emit("ready", name);
+
+    prepare.classList.add("ready");
+    prepare.disabled = true;
+    prepare.removeEventListener("click", readyHandler);
+  };
+  prepare.addEventListener("click", readyHandler);
+
   socket.on("stage", (round) => {
     [...stages.children].forEach((elem, i) => {
       elem.textContent = round[i];
@@ -156,6 +168,7 @@ window.onload = () => {
 
     switch (myClass) {
       case "멀린":
+        document.querySelector(".class").classList.add("good");
         [...participants.children].forEach((elem, index) => {
           if (shuffled[index] == "암살자" || shuffled[index] == "모르가나") {
             elem.classList.add("red");
@@ -163,6 +176,7 @@ window.onload = () => {
         });
         break;
       case "암살자":
+        document.querySelector(".class").classList.add("bad");
         [...participants.children].forEach((elem, index) => {
           if (shuffled[index] == "암살자" || shuffled[index] == "모르가나") {
             elem.classList.add("red");
@@ -170,6 +184,7 @@ window.onload = () => {
         });
         break;
       case "퍼시벌":
+        document.querySelector(".class").classList.add("good");
         [...participants.children].forEach((elem, index) => {
           if (shuffled[index] == "멀린" || shuffled[index] == "모르가나") {
             elem.classList.add("blue");
@@ -177,6 +192,7 @@ window.onload = () => {
         });
         break;
       case "모르가나":
+        document.querySelector(".class").classList.add("bad");
         [...participants.children].forEach((elem, index) => {
           if (shuffled[index] == "암살자" || shuffled[index] == "모르가나") {
             elem.classList.add("red");
@@ -184,6 +200,7 @@ window.onload = () => {
         });
         break;
       default:
+        document.querySelector(".class").classList.add("good");
         break;
     }
   });
