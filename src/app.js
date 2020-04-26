@@ -102,6 +102,8 @@ window.onload = () => {
   });
 
   socket.on("expeditionResult", (stage, result) => {
+    const divide = document.createElement("hr");
+    histories.appendChild(divide);
     stages.children[stage].classList.add(result ? "success" : "fail");
 
     selection.lastElementChild.style.display = "block";

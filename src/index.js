@@ -150,7 +150,7 @@ io.on("connection", (defaultSocket) => {
             space.emit("exit", gameInfos[index].assassin);
             return;
           }
-          if (gameInfos[index]) gameInfos[index].expeditionResult = [];
+          gameInfos[index].expeditionResult = [];
           gameInfos[index].nowStage++;
           gameInfos[index].expedition = Array(gameInfos[index].playerNum).fill(
             false
@@ -210,17 +210,43 @@ io.on("connection", (defaultSocket) => {
             (a, c) => (c ? a + 1 : a),
             0
           );
-          if (isGo > 2) {
+          gameInfos[index].history = Array(gameInfos[index].playerNum);
+          if (isGo > Math.floor(gameInfos[index].playerNum / 2)) {
             space.emit(
               "startExpediton",
               gameInfos[index].nowStage,
               gameInfos[index].expedition
             );
           } else {
-            gameInfos[index].history = Array(gameInfos[index].playerNum);
             gameInfos[index].expedition = Array(
               gameInfos[index].playerNum
             ).fill(false);
+            if (gameInfos[index].voteCnt == 4) {
+              space.emit("expeditionResult", gameInfos[index].nowStage, false);
+              if (gameInfos[index].stageResult.fail == 3) {
+                space.emit("chat message", "관리자", 0, "악의 승리입니다.");
+                space.emit("exit", -1);
+                Object.keys(space.connected).forEach((socketId) => {
+                  space.connected[socketId].disconnect();
+                });
+                space.removeAllListeners();
+                delete io.nsps["/" + game.id];
+                delete gameInfos[index];
+                delete games[index];
+                io.emit("gameList", games);
+              } else {
+                gameInfos[index].expeditionResult = [];
+                gameInfos[index].nowStage++;
+                gameInfos[index].expedition = Array(
+                  gameInfos[index].playerNum
+                ).fill(false);
+                gameInfos[index].voteCnt = 0;
+                space.emit("expedition", gameInfos[index].expedition);
+                space.emit("king", gameInfos[index].king, 0);
+              }
+
+              return;
+            }
             space.emit("expedition", gameInfos[index].expedition);
             space.emit(
               "king",
