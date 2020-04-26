@@ -30,7 +30,7 @@ const rules = {
   },
 };
 
-const games = [];
+let gameList = [];
 const gameInfos = [];
 
 app.use(express.static("src"));
@@ -42,23 +42,32 @@ app.get("/game/:id/:name", (req, res) => {
   res.sendFile(__dirname + "/main.html");
 });
 
+const updateGameList = (id, num) => {
+  gameList.forEach((game, index) => {
+    if (game.id === id) {
+      gameList[index].num = num;
+    }
+  });
+};
+
 io.on("connection", (defaultSocket) => {
   console.log("user connected");
-  io.emit("gameList", games);
+  io.emit("gameList", gameList);
+
   defaultSocket.on("newGame", (game) => {
     if (game.total < 5 || game.total > 6) {
       return;
     }
-    games.push({
+    gameList.push({
       ...game,
       num: 0,
     });
     const space = io.of("/" + game.id);
-    const index = games.length - 1;
-    io.emit("gameList", games);
+    io.emit("gameList", gameList);
     const { stage, classes } = rules[game.total];
     const playerNum = Number(game.total);
-    gameInfos.push({
+    const gameInfo = {
+      id: game.id,
       playerNum,
       players: [],
       getNumber: {},
@@ -69,217 +78,252 @@ io.on("connection", (defaultSocket) => {
       expeditionResult: [],
       nowStage: 0,
       expeditionNum: 0,
-      expedition: Array(playerNum).fill(false),
+      expeditionMember: Array(playerNum).fill(false),
       history: Array(playerNum),
       votes: Array(playerNum).fill(false),
       king: 0,
       voteCnt: 0,
       merlin: -1,
       assassin: -1,
-    });
+    };
 
     space.on("connection", (socket) => {
+      // 스테이지 설정
       socket.emit("stage", gameInfos[index].stage);
-      socket.on("join", (name) => {
-        if (gameInfos[index].players.includes(name)) {
-          socket.emit("block", "동일한 이름은 사용할 수 없습니다.");
-          return;
-        }
 
-        if (games[index].num == games[index].total) {
-          socket.emit("block", "정원이 가득찼습니다.");
-          return;
-        }
+      const addPlayer = (name) => {
+        gameInfo.players.push(name);
+        gameInfo.getNumber[name] = gameInfo.players.length;
+        gameInfo.isReady[name] = false;
+      };
 
-        gameInfos[index].players.push(name);
-        gameInfos[index].getNumber[name] = gameInfos[index].players.length;
-        gameInfos[index].isReady[name] = false;
+      const removePlayer = (name) => {
+        const index = gameInfo.players.indexOf(name);
+        gameInfo.players.splice(index, 1);
+        delete gameInfo.getNumber[name];
+        delete gameInfo.isReady[name];
+      };
 
-        games[index].num = gameInfos[index].players.length;
-        io.emit("gameList", games);
-
-        console.log(name + " joined server");
-        space.emit("chat message", name, 0, "님이 입장하였습니다.");
-        space.emit("join", gameInfos[index].players);
-      });
-
-      socket.on("leave", (name) => {
-        games[index].num--;
-        io.emit("gameList", games);
-        const playerIndex = gameInfos[index].players.indexOf(name);
-        gameInfos[index].players.splice(playerIndex, 1);
-        delete gameInfos[index].getNumber[name];
-        delete gameInfos[index].isReady[name];
-        console.log(name + " leaved server");
-        space.emit("join", gameInfos[index].players);
-        space.emit("chat message", name, 0, "님이 퇴장하였습니다.");
-        if (games[index].num == 0) {
-          Object.keys(space.connected).forEach((socketId) => {
-            space.connected[socketId].disconnect();
-          });
-          space.removeAllListeners();
-          delete io.nsps["/" + game.id];
-          delete gameInfos[index];
-          delete games[index];
-          io.emit("gameList", games);
-        }
-      });
-
-      socket.on("expedition", (num, value) => {
-        gameInfos[index].expeditionResult.push(value == "true");
-        if (
-          gameInfos[index].expeditionResult.length ==
-          gameInfos[index].stage[gameInfos[index].nowStage]
-        ) {
-          const result = gameInfos[index].expeditionResult.every((v) => v);
-          gameInfos[index].stageResult[result ? "success" : "fail"]++;
-          space.emit("expeditionResult", gameInfos[index].nowStage, result);
-          if (gameInfos[index].stageResult.fail == 3) {
-            space.emit("chat message", "관리자", 0, "악의 승리입니다.");
-            space.emit("exit", -1);
-            Object.keys(space.connected).forEach((socketId) => {
-              space.connected[socketId].disconnect();
-            });
-            space.removeAllListeners();
-            delete io.nsps["/" + game.id];
-            delete gameInfos[index];
-            delete games[index];
-            io.emit("gameList", games);
-          }
-          if (gameInfos[index].stageResult.success == 3) {
-            space.emit("exit", gameInfos[index].assassin);
-            return;
-          }
-          gameInfos[index].expeditionResult = [];
-          gameInfos[index].nowStage++;
-          gameInfos[index].expedition = Array(gameInfos[index].playerNum).fill(
-            false
-          );
-          gameInfos[index].voteCnt = 0;
-          space.emit("expedition", gameInfos[index].expedition);
-          space.emit("king", gameInfos[index].king, 0);
-        }
-      });
-      socket.on("merlin", (number) => {
-        space.emit("merlinResult", number, gameInfos[index].merlin);
-        if (number == gameInfos[index].merlin) {
-          space.emit("chat message", "관리자", 0, "악의 승리입니다.");
-        } else {
-          space.emit("chat message", "관리자", 0, "선의 승리입니다.");
-        }
-
+      const removeSocket = (id) => {
         Object.keys(space.connected).forEach((socketId) => {
           space.connected[socketId].disconnect();
         });
         space.removeAllListeners();
-        delete io.nsps["/" + game.id];
-        delete gameInfos[index];
-        delete games[index];
-        io.emit("gameList", games);
-      });
-      socket.on("member", (number) => {
-        if (
-          gameInfos[index].expeditionNum <
-          gameInfos[index].stage[gameInfos[index].nowStage]
-        ) {
-          if (gameInfos[index].expedition[number - 1]) return;
-          gameInfos[index].expeditionNum++;
-          gameInfos[index].expedition[number - 1] = true;
-          space.emit("expedition", gameInfos[index].expedition);
-          if (
-            gameInfos[index].expeditionNum ==
-            gameInfos[index].stage[gameInfos[index].nowStage]
-          ) {
-            gameInfos[index].history = Array(gameInfos[index].playerNum);
-            space.emit("vote");
-          }
+        delete io.nsps["/" + id];
+        const index = gameList.findIndex((game) => game.id === id);
+        delete gameList[index];
+        io.emit("gameList", gameList);
+      };
+
+      const terminateGame = (winner) => {
+        space.emit(
+          "chat message",
+          "관리자",
+          0,
+          `${winner ? "선" : "악"}의 승리입니다.`
+        );
+        space.emit("exit", -1);
+        removeSocket(gameInfo.id);
+      };
+
+      const joinGame = (name) => {
+        if (gameInfo.players.includes(name)) {
+          socket.emit("block", "동일한 이름은 사용할 수 없습니다.");
+          return;
         }
-      });
-      socket.on("vote", (num, value) => {
-        gameInfos[index].history[num - 1] = value == "true";
-        gameInfos[index].votes[num - 1] = true;
-        if (gameInfos[index].votes.every((v) => v)) {
-          gameInfos[index].king =
-            (gameInfos[index].king + 1) % gameInfos[index].playerNum;
-          gameInfos[index].expeditionNum = 0;
-          gameInfos[index].votes = Array(gameInfos[index].playerNum).fill(
-            false
-          );
+        addPlayer(name);
+        updateGameList(gameInfo.id, gameInfo.players.length);
+        io.emit("gameList", gameList);
+
+        console.log(name + " joined server");
+        space.emit("chat message", name, 0, "님이 입장하였습니다.");
+        space.emit("join", gameInfo.players);
+      };
+
+      const leaveGame = (name) => {
+        removePlayer(name);
+        console.log(name + " leaved server");
+        updateGameList(gameInfo.id, gameInfo.players.length);
+        io.emit("gameList", gameList);
+        // 참가자 목록 업데이트
+        space.emit("join", gameInfo.players);
+        space.emit("chat message", name, 0, "님이 퇴장하였습니다.");
+        if (gameInfo.players.length == 0) {
+          removeSocket(gameInfo.id);
+        }
+      };
+
+      const isAllReady = (current, total, readyList) => {
+        if (current !== total) return false;
+        return Object.values(readyList).every((v) => v);
+      };
+
+      const startGame = (classes) => {
+        const shuffled = classes.sort(() => 0.5 - Math.random());
+        shuffled.forEach((c, i) => {
+          if (c == "멀린") {
+            gameInfo.merlin = i + 1;
+          }
+          if (c == "암살자") {
+            gameInfo.assassin = i + 1;
+          }
+        });
+        space.emit("class", shuffled);
+        space.emit("chat message", "관리자", 0, "게임이 시작되었습니다.");
+        space.emit("king", gameInfo.king, 0);
+      };
+
+      const readyGame = (name) => {
+        gameInfo.isReady[name] = true;
+        if (
+          isAllReady(
+            gameInfo.players.length,
+            gameInfo.playerNum,
+            gameInfo.isReady
+          )
+        ) {
+          startGame(gameInfo.classes);
+        }
+      };
+
+      const isSelected = (expeditionMember, number) => {
+        return expeditionMember[number];
+      };
+      const getExpeditionNum = (expeditionMember) => {
+        return expeditionMember.reduce((num, exp) => (exp ? num + 1 : num), 0);
+      };
+      const isCompleteSelect = (current, total) => {
+        return current === total;
+      };
+
+      const selectMember = (number) => {
+        if (isSelected(gameInfo.expeditionMember, number - 1)) return;
+        const expeditionNum = getExpeditionNum(gameInfo.expeditionMember);
+        const total = gameInfo.stage[gameInfo.nowStage];
+
+        if (isCompleteSelect(expeditionNum, total)) return;
+
+        gameInfo.expeditionMember[number - 1] = true;
+        space.emit("showMember", gameInfo.expedition);
+
+        if (isCompleteSelect(expeditionNum + 1, total)) {
+          gameInfo.history = Array(gameInfos[index].playerNum);
+          gameInfo.isVoted = Array(gameInfos[index].playerNum);
+          space.emit("vote");
+        }
+      };
+
+      const isCompleteVote = (isVoted) => {
+        return isVoted.every((v) => v);
+      };
+
+      const nextKing = (current, total) => {
+        return (current + 1) % total;
+      };
+
+      const isMajority = (voteResult, playerNum) => {
+        const agreeNum = voteResult.reduce(
+          (num, isAgree) => (isAgree ? num + 1 : num),
+          0
+        );
+
+        return agreeNum > Math.floor(playerNum / 2);
+      };
+
+      const checkFinish = ({ success, fail }) => {
+        switch (3) {
+          case success:
+            space.emit("exit", gameInfo.assassin);
+            break;
+          case fail:
+            terminateGame(false);
+            break;
+          default:
+            break;
+        }
+      };
+
+      const initVote = (playerNum) => {
+        gameInfo.votes = Array(playerNum).fill(false);
+        gameInfo.history = Array(playerNum);
+      };
+
+      const initStage = (stageNum) => {
+        gameInfo.expeditionResult = [];
+        gameInfo.nowStage = stageNum;
+        gameInfo.expeditionMember = Array(gameInfo.playerNum).fill(false);
+        gameInfo.voteCnt = 0;
+        space.emit("showMember", gameInfo.expeditionMember);
+        space.emit("king", gameInfo.king, 0);
+      };
+
+      const voteForSelected = (num, value) => {
+        gameInfo.history[num - 1] = value == "true";
+        gameInfo.isVoted[num - 1] = true;
+        if (isCompleteVote(gameInfo.isVoted)) {
           space.emit("voteResult", gameInfos[index].history);
-          const isGo = gameInfos[index].history.reduce(
-            (a, c) => (c ? a + 1 : a),
-            0
-          );
-          gameInfos[index].history = Array(gameInfos[index].playerNum);
-          if (isGo > Math.floor(gameInfos[index].playerNum / 2)) {
+          gameInfo.king = nextKing(gameInfo.king, gameInfo.playerNum);
+          if (isMajority(gameInfo.history, gameInfo.playerNum)) {
+            // 투표 통과
             space.emit(
               "startExpediton",
-              gameInfos[index].nowStage,
-              gameInfos[index].expedition
+              gameInfo.nowStage,
+              gameInfo.expeditionMember
             );
+            initVote(gameInfo.playerNum);
           } else {
-            gameInfos[index].expedition = Array(
-              gameInfos[index].playerNum
-            ).fill(false);
-            if (gameInfos[index].voteCnt == 4) {
-              space.emit("expeditionResult", gameInfos[index].nowStage, false);
-              if (gameInfos[index].stageResult.fail == 3) {
-                space.emit("chat message", "관리자", 0, "악의 승리입니다.");
-                space.emit("exit", -1);
-                Object.keys(space.connected).forEach((socketId) => {
-                  space.connected[socketId].disconnect();
-                });
-                space.removeAllListeners();
-                delete io.nsps["/" + game.id];
-                delete gameInfos[index];
-                delete games[index];
-                io.emit("gameList", games);
-              } else {
-                gameInfos[index].expeditionResult = [];
-                gameInfos[index].nowStage++;
-                gameInfos[index].expedition = Array(
-                  gameInfos[index].playerNum
-                ).fill(false);
-                gameInfos[index].voteCnt = 0;
-                space.emit("expedition", gameInfos[index].expedition);
-                space.emit("king", gameInfos[index].king, 0);
-              }
-
-              return;
+            // 투표 실패
+            if (gameInfo.voteCnt === 4) {
+              space.emit("expeditionResult", gameInfo.nowStage, false);
+              gameInfo.stageResult.fail++;
+              checkFinish(gameInfo.stageResult);
+            } else {
+              initVote(gameInfo.playerNum);
+              initStage(gameInfo.stageNum + 1);
             }
-            space.emit("expedition", gameInfos[index].expedition);
-            space.emit(
-              "king",
-              gameInfos[index].king,
-              ++gameInfos[index].voteCnt
-            );
+            gameInfo.expeditionMember = Array(gameInfo.playerNum).fill(false);
+            space.emit("showMember", gameInfo.expeditionMember);
+            space.emit("king", gameInfo.king, ++gameInfo.voteCnt);
           }
         }
-      });
+      };
 
-      socket.on("ready", (name) => {
-        gameInfos[index].isReady[name] = true;
+      const showResult = (expeditionResult) => {
+        const result = expeditionResult.every((v) => v);
+        gameInfo.stageResult[result ? "success" : "fail"]++;
+        space.emit("expeditionResult", gameInfo.nowStage, result);
+      };
+      const voteForExpedition = (num, value) => {
+        gameInfo.expeditionResult.push(value == "true");
         if (
-          games[index].num == games[index].total &&
-          Object.values(gameInfos[index].isReady).every((v) => v)
+          isCompleteSelect(
+            gameInfo.expeditionResult.length,
+            gameInfo.stage[gameInfo.nowStage]
+          )
         ) {
-          const shuffled = gameInfos[index].classes.sort(
-            () => 0.5 - Math.random()
-          );
-          shuffled.forEach((c, i) => {
-            if (c == "멀린") {
-              gameInfos[index].merlin = i + 1;
-            }
-            if (c == "암살자") {
-              gameInfos[index].assassin = i + 1;
-            }
-          });
-          space.emit("class", shuffled);
-          console.log("start");
-          space.emit("chat message", "관리자", 0, "게임이 시작되었습니다.");
-          space.emit("king", gameInfos[index].king, 0);
+          showResult(gameInfo.expeditionResult);
+          checkFinish(gameInfo.stageResult);
+          initStage(gameInfo.nowStage + 1);
         }
-      });
+      };
+
+      const findMerlin = (number) => {
+        space.emit("merlinResult", number, gameInfo.merlin);
+        if (number == gameInfo.merlin) {
+          space.emit("chat message", "관리자", 0, "악의 승리입니다.");
+        } else {
+          space.emit("chat message", "관리자", 0, "선의 승리입니다.");
+        }
+        removeSocket(gameInfo.id);
+      };
+
+      socket.on("join", joinGame);
+      socket.on("leave", leaveGame);
+      socket.on("ready", readyGame);
+      socket.on("member", selectMember);
+      socket.on("vote", voteForSelected);
+      socket.on("expedition", voteForExpedition);
+      socket.on("merlin", findMerlin);
 
       socket.on("chat message", (name, num, msg) => {
         console.log(`${name} : ${msg}`);

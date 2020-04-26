@@ -75,7 +75,7 @@ window.onload = () => {
 
   selection.addEventListener("click", voteHandler);
 
-  socket.on("expedition", (list) => {
+  socket.on("showMember", (list) => {
     [...participants.children].forEach((elem, index) => {
       if (list[index]) {
         elem.classList.add("expedition");
